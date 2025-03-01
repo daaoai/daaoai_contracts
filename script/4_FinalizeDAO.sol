@@ -6,8 +6,8 @@ import {console2} from "forge-std/console2.sol";
 import {Script} from "forge-std/Script.sol";
 import {DaaoToken} from "../src/DaaoToken.sol"; // Adjust the path based on your project structure
 import {Daao} from "../src/Daao.sol"; // Adjust the path based on your project structure
-contract WhitelistUser is Script {
 
+contract WhitelistUser is Script {
     function run() public {
         // Load private key
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");

@@ -10,4 +10,4 @@ contract MockTokenSpender {
         IERC20(token).transferFrom(msg.sender, address(this), amount);
         tokenSpent = true;
     }
-} 
+}

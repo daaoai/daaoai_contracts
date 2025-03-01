@@ -8,11 +8,11 @@ import {DaaoToken} from "../src/DaaoToken.sol"; // Adjust the path based on your
 import {Daao} from "../src/Daao.sol"; // Adjust the path based on your project structure
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {LockerFactory} from "../src/LPLocker/LockerFactory.sol";
-contract DeployDaosWorld is Script {
 
+contract DeployDaosWorld is Script {
     address public constant PAYMENT_TOKEN = 0x760AfE86e5de5fa0Ee542fc7B7B713e1c5425701; // Wrapped MON token for monad testnet
     address public constant NONFUNGIBLE_POSITION_MANAGER = 0x3dCc735C74F10FE2B9db2BB55C40fbBbf24490f7;
-    
+
     function run() public {
         // Load private key
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
@@ -49,6 +49,5 @@ contract DeployDaosWorld is Script {
         console2.log("DaosWorldV1 is ", address(daosWorldV1)); //0x147f235Dde1adcB00Ef8E2D10D98fEd9a091284D
 
         vm.stopBroadcast();
-
     }
 }

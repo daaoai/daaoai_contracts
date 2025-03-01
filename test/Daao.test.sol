@@ -22,8 +22,7 @@ interface ILocker {
     function released(address) external view returns (uint256);
 }
 
-contract DaaoTest is Test{
-
+contract DaaoTest is Test {
     Daao public dao;
     address public modeToken;
     uint256 constant INITIAL_BALANCE = 100000 ether;
@@ -51,14 +50,14 @@ contract DaaoTest is Test{
         modeToken = address(new MockERC20());
         vm.etch(0xDfc7C877a950e49D2610114102175A06C2e3167a, address(modeToken).code);
         modeToken = 0xDfc7C877a950e49D2610114102175A06C2e3167a;
-        
+
         uint256 fundraisingGoal = 10 ether; // 10
         uint256 fundraisingDeadline = block.timestamp + 7 days; // 7 days from now
         uint256 fundExpiry = fundraisingDeadline + 30 days; // 30 days after deadline
         address daoManager = DAO_MANAGER;
 
         LIQUIDITY_LOCKER_FACTORY = address(new LockerFactory());
-    
+
         address liquidityLockerFactory = LIQUIDITY_LOCKER_FACTORY;
         address protocolAdmin = PROTOCOL_ADMIN;
 
@@ -74,7 +73,6 @@ contract DaaoTest is Test{
             modeToken,
             NONFUNGIBLE_POSITION_MANAGER
         );
-
 
         // Give test users some address(modeToken) tokens
         vm.startPrank(MODE_WHALE);
@@ -186,14 +184,14 @@ contract DaaoTest is Test{
         assertEq(newDao.PAYMENT_TOKEN(), modeToken);
 
         // Check UNISWAP_V3_FACTORY is set correctly
-        assertEq(address(newDao.UNISWAP_V3_FACTORY()), INonfungiblePositionManager(NONFUNGIBLE_POSITION_MANAGER).factory());
+        assertEq(
+            address(newDao.UNISWAP_V3_FACTORY()), INonfungiblePositionManager(NONFUNGIBLE_POSITION_MANAGER).factory()
+        );
 
         // Check POSITION_MANAGER is set correctly
         assertEq(address(newDao.POSITION_MANAGER()), NONFUNGIBLE_POSITION_MANAGER);
-        
-        
     }
-    
+
     function test_addOrUpdateWhitelistShouldRevertIfNotCalledByDaoManagerOrProtocolAdmin() public {
         address[] memory users = new address[](2);
         users[0] = USER_1;
@@ -290,12 +288,14 @@ contract DaaoTest is Test{
 
         assertEq(dao.getWhitelistLength(), 0);
 
-        (bool isUser1ActiveBefore, Daao.WhitelistTier user1TierBefore, uint256 user1AddedAtBefore) = dao.getWhitelistInfo(USER_1);
+        (bool isUser1ActiveBefore, Daao.WhitelistTier user1TierBefore, uint256 user1AddedAtBefore) =
+            dao.getWhitelistInfo(USER_1);
         assertEq(isUser1ActiveBefore, false);
         assertEq(uint8(user1TierBefore), uint8(Daao.WhitelistTier.None));
         assertEq(user1AddedAtBefore, 0);
 
-        (bool isUser2ActiveBefore, Daao.WhitelistTier user2TierBefore, uint256 user2AddedAtBefore) = dao.getWhitelistInfo(USER_2);
+        (bool isUser2ActiveBefore, Daao.WhitelistTier user2TierBefore, uint256 user2AddedAtBefore) =
+            dao.getWhitelistInfo(USER_2);
         assertEq(isUser2ActiveBefore, false);
         assertEq(uint8(user2TierBefore), uint8(Daao.WhitelistTier.None));
         assertEq(user2AddedAtBefore, 0);
@@ -305,12 +305,14 @@ contract DaaoTest is Test{
 
         assertEq(dao.getWhitelistLength(), 2);
 
-        (bool isUser1ActiveAfter, Daao.WhitelistTier user1TierAfter, uint256 user1AddedAtAfter) = dao.getWhitelistInfo(USER_1);
+        (bool isUser1ActiveAfter, Daao.WhitelistTier user1TierAfter, uint256 user1AddedAtAfter) =
+            dao.getWhitelistInfo(USER_1);
         assertEq(isUser1ActiveAfter, true);
         assertEq(uint8(user1TierAfter), uint8(Daao.WhitelistTier.Platinum));
         assertEq(user1AddedAtAfter, block.timestamp);
 
-        (bool isUser2ActiveAfter, Daao.WhitelistTier user2TierAfter, uint256 user2AddedAtAfter) = dao.getWhitelistInfo(USER_2);
+        (bool isUser2ActiveAfter, Daao.WhitelistTier user2TierAfter, uint256 user2AddedAtAfter) =
+            dao.getWhitelistInfo(USER_2);
         assertEq(isUser2ActiveAfter, true);
         assertEq(uint8(user2TierAfter), uint8(Daao.WhitelistTier.Gold));
         assertEq(user2AddedAtAfter, block.timestamp);
@@ -382,7 +384,8 @@ contract DaaoTest is Test{
 
         assertEq(dao.getWhitelistLength(), 1);
 
-        (bool isActiveBeforeRemoval, Daao.WhitelistTier tierBeforeRemoval, uint256 addedAtBeforeRemoval) = dao.getWhitelistInfo(USER_1);
+        (bool isActiveBeforeRemoval, Daao.WhitelistTier tierBeforeRemoval, uint256 addedAtBeforeRemoval) =
+            dao.getWhitelistInfo(USER_1);
         assertEq(isActiveBeforeRemoval, true);
         assertEq(uint8(tierBeforeRemoval), uint8(Daao.WhitelistTier.Platinum));
         assertEq(addedAtBeforeRemoval, block.timestamp);
@@ -392,7 +395,8 @@ contract DaaoTest is Test{
 
         assertEq(dao.getWhitelistLength(), 0);
 
-        (bool isActiveAfterRemoval, Daao.WhitelistTier tierAfterRemoval, uint256 addedAtAfterRemoval) = dao.getWhitelistInfo(USER_1);
+        (bool isActiveAfterRemoval, Daao.WhitelistTier tierAfterRemoval, uint256 addedAtAfterRemoval) =
+            dao.getWhitelistInfo(USER_1);
         assertEq(isActiveAfterRemoval, false);
         assertEq(uint8(tierAfterRemoval), uint8(Daao.WhitelistTier.None));
         assertEq(addedAtAfterRemoval, block.timestamp); // addedAt timestamp remains unchanged
@@ -463,7 +467,7 @@ contract DaaoTest is Test{
         users[0] = USER_1;
         Daao.WhitelistTier[] memory tiers = new Daao.WhitelistTier[](1);
         tiers[0] = Daao.WhitelistTier.Platinum;
-        
+
         vm.prank(PROTOCOL_ADMIN);
         dao.addOrUpdateWhitelist(users, tiers);
 
@@ -486,7 +490,7 @@ contract DaaoTest is Test{
         users[0] = USER_1;
         Daao.WhitelistTier[] memory tiers = new Daao.WhitelistTier[](1);
         tiers[0] = Daao.WhitelistTier.Platinum;
-        
+
         vm.prank(PROTOCOL_ADMIN);
         dao.addOrUpdateWhitelist(users, tiers);
 
@@ -504,7 +508,7 @@ contract DaaoTest is Test{
         users[0] = USER_1;
         Daao.WhitelistTier[] memory tiers = new Daao.WhitelistTier[](1);
         tiers[0] = Daao.WhitelistTier.Platinum;
-        
+
         vm.prank(PROTOCOL_ADMIN);
         dao.addOrUpdateWhitelist(users, tiers);
 
@@ -525,7 +529,7 @@ contract DaaoTest is Test{
         users[0] = USER_1;
         Daao.WhitelistTier[] memory tiers = new Daao.WhitelistTier[](1);
         tiers[0] = Daao.WhitelistTier.Silver;
-        
+
         vm.prank(PROTOCOL_ADMIN);
         dao.addOrUpdateWhitelist(users, tiers);
 
@@ -542,7 +546,7 @@ contract DaaoTest is Test{
         Daao.WhitelistTier[] memory tiers = new Daao.WhitelistTier[](2);
         tiers[0] = Daao.WhitelistTier.Platinum;
         tiers[1] = Daao.WhitelistTier.Platinum;
-        
+
         vm.prank(PROTOCOL_ADMIN);
         dao.addOrUpdateWhitelist(users, tiers);
 
@@ -573,7 +577,7 @@ contract DaaoTest is Test{
         users[0] = USER_1;
         Daao.WhitelistTier[] memory tiers = new Daao.WhitelistTier[](1);
         tiers[0] = Daao.WhitelistTier.Platinum;
-        
+
         vm.prank(PROTOCOL_ADMIN);
         dao.addOrUpdateWhitelist(users, tiers);
 
@@ -581,11 +585,11 @@ contract DaaoTest is Test{
 
         vm.startPrank(USER_1);
         IERC20(address(modeToken)).approve(address(dao), contributionAmount);
-        
+
         // Record state before contribution
         uint256 balanceBefore = IERC20(address(modeToken)).balanceOf(USER_1);
         uint256 daoBalanceBefore = IERC20(address(modeToken)).balanceOf(address(dao));
-        
+
         dao.contribute(contributionAmount);
 
         // Verify state changes
@@ -593,7 +597,7 @@ contract DaaoTest is Test{
         assertEq(dao.contributions(USER_1), contributionAmount);
         assertEq(IERC20(address(modeToken)).balanceOf(USER_1), balanceBefore - contributionAmount);
         assertEq(IERC20(address(modeToken)).balanceOf(address(dao)), daoBalanceBefore + contributionAmount);
-        
+
         vm.stopPrank();
     }
 
@@ -605,7 +609,7 @@ contract DaaoTest is Test{
         Daao.WhitelistTier[] memory tiers = new Daao.WhitelistTier[](2);
         tiers[0] = Daao.WhitelistTier.Platinum;
         tiers[1] = Daao.WhitelistTier.Platinum;
-        
+
         vm.prank(PROTOCOL_ADMIN);
         dao.addOrUpdateWhitelist(users, tiers);
 
@@ -641,7 +645,7 @@ contract DaaoTest is Test{
         users[0] = USER_1;
         Daao.WhitelistTier[] memory tiers = new Daao.WhitelistTier[](1);
         tiers[0] = Daao.WhitelistTier.Platinum;
-        
+
         vm.prank(PROTOCOL_ADMIN);
         dao.addOrUpdateWhitelist(users, tiers);
 
@@ -667,7 +671,7 @@ contract DaaoTest is Test{
         users[0] = USER_1;
         Daao.WhitelistTier[] memory tiers = new Daao.WhitelistTier[](1);
         tiers[0] = Daao.WhitelistTier.Platinum;
-        
+
         vm.prank(PROTOCOL_ADMIN);
         dao.addOrUpdateWhitelist(users, tiers);
 
@@ -697,7 +701,7 @@ contract DaaoTest is Test{
         users[0] = USER_1;
         Daao.WhitelistTier[] memory tiers = new Daao.WhitelistTier[](1);
         tiers[0] = Daao.WhitelistTier.Platinum;
-        
+
         vm.prank(PROTOCOL_ADMIN);
         dao.addOrUpdateWhitelist(users, tiers);
 
@@ -736,7 +740,7 @@ contract DaaoTest is Test{
         Daao.WhitelistTier[] memory tiers = new Daao.WhitelistTier[](2);
         tiers[0] = Daao.WhitelistTier.Platinum;
         tiers[1] = Daao.WhitelistTier.Platinum;
-        
+
         vm.prank(PROTOCOL_ADMIN);
         dao.addOrUpdateWhitelist(users, tiers);
 
@@ -787,7 +791,7 @@ contract DaaoTest is Test{
         users[0] = USER_1;
         Daao.WhitelistTier[] memory tiers = new Daao.WhitelistTier[](1);
         tiers[0] = Daao.WhitelistTier.Platinum;
-        
+
         vm.startPrank(PROTOCOL_ADMIN);
         dao.addOrUpdateWhitelist(users, tiers);
         dao.updateTierLimit(Daao.WhitelistTier.Platinum, 10 ether);
@@ -808,7 +812,7 @@ contract DaaoTest is Test{
 
     function test_extendFundExpiryShouldRevertIfNotOwner() public {
         uint256 newFundExpiry = block.timestamp + 60 days;
-        
+
         vm.prank(USER_1);
         vm.expectRevert(abi.encodeWithSignature("OwnableUnauthorizedAccount(address)", USER_1));
         dao.extendFundExpiry(newFundExpiry);
@@ -816,7 +820,7 @@ contract DaaoTest is Test{
 
     function test_extendFundExpiryShouldRevertIfNewExpiryNotLater() public {
         uint256 currentFundExpiry = dao.fundExpiry();
-        
+
         vm.prank(DAO_MANAGER);
         vm.expectRevert("Must choose later fund expiry");
         dao.extendFundExpiry(currentFundExpiry);
@@ -828,7 +832,7 @@ contract DaaoTest is Test{
 
     function test_extendFundraisingDeadlineShouldRevertIfNotOwnerOrProtocolAdmin() public {
         uint256 newDeadline = block.timestamp + 14 days;
-        
+
         vm.prank(USER_1);
         vm.expectRevert("Must be owner or protocolAdmin");
         dao.extendFundraisingDeadline(newDeadline);
@@ -840,7 +844,7 @@ contract DaaoTest is Test{
         users[0] = USER_1;
         Daao.WhitelistTier[] memory tiers = new Daao.WhitelistTier[](1);
         tiers[0] = Daao.WhitelistTier.Platinum;
-        
+
         vm.prank(PROTOCOL_ADMIN);
         dao.addOrUpdateWhitelist(users, tiers);
 
@@ -862,7 +866,7 @@ contract DaaoTest is Test{
     function test_extendFundraisingDeadlineShouldRevertIfDeadlinePassed() public {
         // Move past current deadline
         vm.warp(block.timestamp + 8 days);
-        
+
         uint256 newDeadline = block.timestamp + 14 days;
         vm.prank(PROTOCOL_ADMIN);
         vm.expectRevert("can not extend deadline after deadline is passed");
@@ -871,7 +875,7 @@ contract DaaoTest is Test{
 
     function test_extendFundraisingDeadlineShouldRevertIfNewDeadlineNotLater() public {
         uint256 currentDeadline = dao.fundraisingDeadline();
-        
+
         vm.prank(PROTOCOL_ADMIN);
         vm.expectRevert("new fundraising deadline must be > old one");
         dao.extendFundraisingDeadline(currentDeadline);
@@ -903,7 +907,7 @@ contract DaaoTest is Test{
 
     function test_extendFundraisingDeadlineShouldAllowMultipleExtensions() public {
         uint256 currentDeadline = dao.fundraisingDeadline();
-        
+
         // First extension
         uint256 firstNewDeadline = currentDeadline + 7 days;
         vm.prank(PROTOCOL_ADMIN);
@@ -933,7 +937,7 @@ contract DaaoTest is Test{
         users[0] = USER_1;
         Daao.WhitelistTier[] memory tiers = new Daao.WhitelistTier[](1);
         tiers[0] = Daao.WhitelistTier.Platinum;
-        
+
         vm.startPrank(PROTOCOL_ADMIN);
         dao.addOrUpdateWhitelist(users, tiers);
         dao.updateTierLimit(Daao.WhitelistTier.Platinum, 10 ether);
@@ -958,7 +962,7 @@ contract DaaoTest is Test{
         users[0] = USER_1;
         Daao.WhitelistTier[] memory tiers = new Daao.WhitelistTier[](1);
         tiers[0] = Daao.WhitelistTier.Platinum;
-        
+
         // First send some MODE tokens to the contract
         vm.prank(PROTOCOL_ADMIN);
         dao.addOrUpdateWhitelist(users, tiers);
@@ -979,10 +983,7 @@ contract DaaoTest is Test{
 
         // Verify state changes
         assertEq(IERC20(address(modeToken)).balanceOf(address(dao)), 0);
-        assertEq(
-            IERC20(address(modeToken)).balanceOf(PROTOCOL_ADMIN), 
-            initialBalance + daoBalance
-        );
+        assertEq(IERC20(address(modeToken)).balanceOf(PROTOCOL_ADMIN), initialBalance + daoBalance);
     }
 
     function test_finalizeFundraisingShouldRevertIfNotProtocolAdmin() public {
@@ -1003,7 +1004,7 @@ contract DaaoTest is Test{
         users[0] = USER_1;
         Daao.WhitelistTier[] memory tiers = new Daao.WhitelistTier[](1);
         tiers[0] = Daao.WhitelistTier.Platinum;
-        
+
         vm.startPrank(PROTOCOL_ADMIN);
         dao.addOrUpdateWhitelist(users, tiers);
         dao.updateTierLimit(Daao.WhitelistTier.Platinum, 10 ether);
@@ -1031,7 +1032,7 @@ contract DaaoTest is Test{
         users[0] = USER_1;
         users[1] = USER_2;
         users[2] = USER_3;
-        
+
         Daao.WhitelistTier[] memory tiers = new Daao.WhitelistTier[](3);
         tiers[0] = Daao.WhitelistTier.Platinum;
         tiers[1] = Daao.WhitelistTier.Platinum;
@@ -1064,7 +1065,7 @@ contract DaaoTest is Test{
 
         // Get the DAO token address (it's created during finalization)
         address daoTokenAddress = dao.token0() == modeToken ? dao.token1() : dao.token0();
-        
+
         // Calculate expected token distributions (90% of total supply distributed proportionally)
         uint256 user1Expected = (5 ether * dao.SUPPLY_TO_FUNDRAISERS()) / 10 ether; // 50%
         uint256 user2Expected = (3 ether * dao.SUPPLY_TO_FUNDRAISERS()) / 10 ether; // 30%
@@ -1082,7 +1083,7 @@ contract DaaoTest is Test{
         users[0] = USER_1;
         Daao.WhitelistTier[] memory tiers = new Daao.WhitelistTier[](1);
         tiers[0] = Daao.WhitelistTier.Platinum;
-        
+
         vm.startPrank(PROTOCOL_ADMIN);
         dao.addOrUpdateWhitelist(users, tiers);
         dao.updateTierLimit(Daao.WhitelistTier.Platinum, 10 ether);
@@ -1106,18 +1107,16 @@ contract DaaoTest is Test{
         // Verify MODE token distribution
         uint256 expectedModeForLP = (10 ether * dao.LP_PERCENTAGE()) / 100; // 10%
         uint256 expectedModeForTreasury = 10 ether - expectedModeForLP; // 90%
-        
+
         // Verify treasury received correct MODE amount
         assertApproxEqAbs(
-            IERC20(modeToken).balanceOf(DAO_MANAGER),
-            initialOwnerModeBalance + expectedModeForTreasury,
-            1e15
+            IERC20(modeToken).balanceOf(DAO_MANAGER), initialOwnerModeBalance + expectedModeForTreasury, 1e15
         );
 
         // Verify DAO token distribution
         address daoTokenAddress = dao.token0() == modeToken ? dao.token1() : dao.token0();
         uint256 expectedDaoTokensForLP = (dao.TOTAL_SUPPLY() * dao.POOL_PERCENTAGE()) / 100; // 10%
-        
+
         // Get pool address
         address poolAddress = IUniswapV3Factory(dao.UNISWAP_V3_FACTORY()).getPool(modeToken, daoTokenAddress, 10000);
         require(poolAddress != address(0), "Pool not created");
@@ -1132,7 +1131,7 @@ contract DaaoTest is Test{
         assertApproxEqAbs(poolDaoBal, expectedDaoTokensForLP, 50e18, "Incorrect DAO token amount in pool");
 
         // Verify LP tokens were created
-        assertEq(IERC20(daoTokenAddress).balanceOf(address(dao)), 0, "DAO contract should have no tokens left"); 
+        assertEq(IERC20(daoTokenAddress).balanceOf(address(dao)), 0, "DAO contract should have no tokens left");
         assertEq(dao.liquidityLocker() != address(0), true, "Locker should be created");
 
         // Verify NFT ownership
@@ -1141,25 +1140,13 @@ contract DaaoTest is Test{
         assertTrue(tokenId > 0, "No NFT found");
 
         // Get position info
-        (
-            ,
-            ,
-            address token0,
-            address token1,
-            ,
-            ,
-            ,
-            uint128 liquidity,
-            ,
-            ,
-            ,
-        ) = INonfungiblePositionManager(dao.POSITION_MANAGER()).positions(tokenId);
+        (,, address token0, address token1,,,, uint128 liquidity,,,,) =
+            INonfungiblePositionManager(dao.POSITION_MANAGER()).positions(tokenId);
 
         // Verify position details
         assertTrue(liquidity > 0, "No liquidity in position");
         assertTrue(
-            (token0 == modeToken && token1 == daoTokenAddress) ||
-            (token0 == daoTokenAddress && token1 == modeToken),
+            (token0 == modeToken && token1 == daoTokenAddress) || (token0 == daoTokenAddress && token1 == modeToken),
             "Incorrect tokens in position"
         );
     }
@@ -1170,7 +1157,7 @@ contract DaaoTest is Test{
         users[0] = USER_1;
         Daao.WhitelistTier[] memory tiers = new Daao.WhitelistTier[](1);
         tiers[0] = Daao.WhitelistTier.Platinum;
-        
+
         vm.startPrank(PROTOCOL_ADMIN);
         dao.addOrUpdateWhitelist(users, tiers);
         dao.updateTierLimit(Daao.WhitelistTier.Platinum, 10 ether);
@@ -1187,7 +1174,7 @@ contract DaaoTest is Test{
         // Verify locker setup
         address lockerAddress = dao.liquidityLocker();
         assertNotEq(lockerAddress, address(0));
-        
+
         // Verify locker parameters
         ILocker locker = ILocker(lockerAddress);
         assertEq(locker.owner(), DAO_MANAGER);
@@ -1221,7 +1208,7 @@ contract DaaoTest is Test{
         users[0] = USER_1;
         Daao.WhitelistTier[] memory tiers = new Daao.WhitelistTier[](1);
         tiers[0] = Daao.WhitelistTier.Platinum;
-        
+
         vm.startPrank(PROTOCOL_ADMIN);
         dao.addOrUpdateWhitelist(users, tiers);
         dao.updateTierLimit(Daao.WhitelistTier.Platinum, 10 ether);
@@ -1251,7 +1238,7 @@ contract DaaoTest is Test{
         users[0] = USER_1;
         Daao.WhitelistTier[] memory tiers = new Daao.WhitelistTier[](1);
         tiers[0] = Daao.WhitelistTier.Platinum;
-        
+
         vm.startPrank(PROTOCOL_ADMIN);
         dao.addOrUpdateWhitelist(users, tiers);
         dao.updateTierLimit(Daao.WhitelistTier.Platinum, 10 ether);
@@ -1290,7 +1277,7 @@ contract DaaoTest is Test{
         users[0] = USER_1;
         Daao.WhitelistTier[] memory tiers = new Daao.WhitelistTier[](1);
         tiers[0] = Daao.WhitelistTier.Platinum;
-        
+
         vm.startPrank(PROTOCOL_ADMIN);
         dao.addOrUpdateWhitelist(users, tiers);
         dao.updateTierLimit(Daao.WhitelistTier.Platinum, 10 ether);
@@ -1339,7 +1326,7 @@ contract DaaoTest is Test{
         users[0] = USER_1;
         Daao.WhitelistTier[] memory tiers = new Daao.WhitelistTier[](1);
         tiers[0] = Daao.WhitelistTier.Platinum;
-        
+
         vm.startPrank(PROTOCOL_ADMIN);
         dao.addOrUpdateWhitelist(users, tiers);
         dao.updateTierLimit(Daao.WhitelistTier.Platinum, 10 ether);
@@ -1377,12 +1364,12 @@ contract DaaoTest is Test{
         users[0] = USER_1;
         users[1] = USER_2;
         users[2] = USER_3;
-        
+
         Daao.WhitelistTier[] memory tiers = new Daao.WhitelistTier[](3);
         tiers[0] = Daao.WhitelistTier.Platinum;
         tiers[1] = Daao.WhitelistTier.Platinum;
         tiers[2] = Daao.WhitelistTier.Platinum;
-        
+
         vm.prank(PROTOCOL_ADMIN);
         dao.addOrUpdateWhitelist(users, tiers);
 
@@ -1420,13 +1407,13 @@ contract DaaoTest is Test{
         users[1] = USER_2;
         users[2] = USER_3;
         users[3] = USER_4;
-        
+
         Daao.WhitelistTier[] memory tiers = new Daao.WhitelistTier[](4);
         tiers[0] = Daao.WhitelistTier.Platinum;
         tiers[1] = Daao.WhitelistTier.Platinum;
         tiers[2] = Daao.WhitelistTier.Platinum;
         tiers[3] = Daao.WhitelistTier.Platinum;
-        
+
         vm.prank(PROTOCOL_ADMIN);
         dao.addOrUpdateWhitelist(users, tiers);
 
@@ -1488,13 +1475,13 @@ contract DaaoTest is Test{
         users[1] = USER_2;
         users[2] = USER_3;
         users[3] = USER_4;
-        
+
         Daao.WhitelistTier[] memory tiers = new Daao.WhitelistTier[](4);
         tiers[0] = Daao.WhitelistTier.Platinum;
         tiers[1] = Daao.WhitelistTier.Platinum;
         tiers[2] = Daao.WhitelistTier.Platinum;
         tiers[3] = Daao.WhitelistTier.Platinum;
-        
+
         vm.startPrank(PROTOCOL_ADMIN);
         dao.addOrUpdateWhitelist(users, tiers);
         dao.updateTierLimit(Daao.WhitelistTier.Platinum, 10 ether);
@@ -1560,10 +1547,8 @@ contract DaaoTest is Test{
 
         // Verify total distributed equals expected total (excluding pool allocation)
         assertEq(
-            IERC20(daoTokenAddress).balanceOf(USER_1) + 
-            IERC20(daoTokenAddress).balanceOf(USER_2) +
-            IERC20(daoTokenAddress).balanceOf(USER_3) +
-            IERC20(daoTokenAddress).balanceOf(USER_4),
+            IERC20(daoTokenAddress).balanceOf(USER_1) + IERC20(daoTokenAddress).balanceOf(USER_2)
+                + IERC20(daoTokenAddress).balanceOf(USER_3) + IERC20(daoTokenAddress).balanceOf(USER_4),
             dao.SUPPLY_TO_FUNDRAISERS()
         );
     }
@@ -1575,7 +1560,7 @@ contract DaaoTest is Test{
         users[0] = USER_1;
         Daao.WhitelistTier[] memory tiers = new Daao.WhitelistTier[](1);
         tiers[0] = Daao.WhitelistTier.Platinum;
-        
+
         vm.startPrank(PROTOCOL_ADMIN);
         dao.addOrUpdateWhitelist(users, tiers);
         dao.updateTierLimit(Daao.WhitelistTier.Platinum, 10 ether);
@@ -1619,5 +1604,4 @@ contract DaaoTest is Test{
         vm.expectRevert();
         dao.getContributorAtIndex(0);
     }
-
 }

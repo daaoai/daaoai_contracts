@@ -7,4 +7,4 @@ contract MockReceiver {
     function setValue(uint256 _value) external {
         value = _value;
     }
-} 
+}

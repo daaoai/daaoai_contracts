@@ -42,8 +42,7 @@ contract Daao is Ownable, ReentrancyGuard {
     uint256 public constant TOTAL_SUPPLY = 1_000_000_000 * 1e18; // 1 billion total supply
     uint256 public constant POOL_PERCENTAGE = 10; // 10% for pool
     uint256 public constant CONTRIBUTORS_PERCENTAGE = 90; // 90% for contributors
-    uint256 public constant SUPPLY_TO_FUNDRAISERS =
-        (TOTAL_SUPPLY * CONTRIBUTORS_PERCENTAGE) / 100; // 900 million tokens
+    uint256 public constant SUPPLY_TO_FUNDRAISERS = (TOTAL_SUPPLY * CONTRIBUTORS_PERCENTAGE) / 100; // 900 million tokens
 
     uint256 public GOLD_DEFAULT_LIMIT = 0.5 ether;
     uint256 public SILVER_DEFAULT_LIMIT = 0.1 ether;
@@ -73,7 +72,7 @@ contract Daao is Ownable, ReentrancyGuard {
     // The amount of ETH you've contributed
     mapping(WhitelistTier => uint256) public tierLimits;
     mapping(address => uint256) public contributions;
-    
+
     EnumerableSet.AddressSet private contributors;
 
     event RemoveWhitelist(address);
@@ -89,12 +88,8 @@ contract Daao is Ownable, ReentrancyGuard {
     event MintDetails(address indexed contributor, uint256 tokensToMint);
     event TierLimitUpdated(WhitelistTier indexed teir, uint256 _newLimit);
     event TokenTransferredToLocker(uint256 tokenId, address lockerAddress);
-    event MintParamsCreated(
-        uint256 tokenId,
-        address token0,
-        address token1,
-        uint256 liquidity
-    );
+    event MintParamsCreated(uint256 tokenId, address token0, address token1, uint256 liquidity);
+
     address public token0;
     address public token1;
 
@@ -110,18 +105,9 @@ contract Daao is Ownable, ReentrancyGuard {
         address _paymentToken,
         address _v3NonfungiblePositionManager
     ) Ownable(_daoManager) {
-        require(
-            _fundraisingGoal > 0,
-            "Fundraising goal must be greater than 0"
-        );
-        require(
-            _fundraisingDeadline > block.timestamp,
-            "Deadline must be in the future"
-        );
-        require(
-            _fundExpiry > _fundraisingDeadline,
-            "Fund expiry must be greater than fundraising deadline"
-        );
+        require(_fundraisingGoal > 0, "Fundraising goal must be greater than 0");
+        require(_fundraisingDeadline > block.timestamp, "Deadline must be in the future");
+        require(_fundExpiry > _fundraisingDeadline, "Fund expiry must be greater than fundraising deadline");
         name = _name;
         symbol = _symbol;
         fundraisingGoal = _fundraisingGoal;
@@ -148,14 +134,11 @@ contract Daao is Ownable, ReentrancyGuard {
         // Must be whitelisted
         WhitelistInfo memory userInfo = whitelistInfo[msg.sender];
         require(userInfo.isActive && userInfo.tier != WhitelistTier.None, "Not whitelisted");
-        
+
         // Contribution must below teir limit
         uint256 userLimit = tierLimits[userInfo.tier];
 
-        require(
-            contributions[msg.sender] + _amount <= userLimit,
-            "Exceeding tier limit"
-        );
+        require(contributions[msg.sender] + _amount <= userLimit, "Exceeding tier limit");
 
         uint256 effectiveContribution = _amount;
         if (totalRaised + _amount > fundraisingGoal) {
@@ -164,7 +147,7 @@ contract Daao is Ownable, ReentrancyGuard {
 
         if (effectiveContribution > 0) {
             // If the payment token is native, we need to wrap it to WETH
-            if(_isPaymentTokenNative){
+            if (_isPaymentTokenNative) {
                 require(msg.value == _amount, "Amount must be equal to msg.value");
                 IWETH(PAYMENT_TOKEN).deposit{value: _amount}();
             } else {
@@ -179,21 +162,15 @@ contract Daao is Ownable, ReentrancyGuard {
         contributions[msg.sender] += effectiveContribution;
         totalRaised += effectiveContribution;
 
-        if(totalRaised >= fundraisingGoal) {
+        if (totalRaised >= fundraisingGoal) {
             goalReached = true;
         }
 
         emit Contribution(msg.sender, effectiveContribution);
     }
 
-    function addOrUpdateWhitelist(
-        address[] calldata _addresses,
-        WhitelistTier[] calldata _tiers
-    ) external {
-        require(
-            msg.sender == owner() || msg.sender == protocolAdmin,
-            "Must be owner or protocolAdmin"
-        );
+    function addOrUpdateWhitelist(address[] calldata _addresses, WhitelistTier[] calldata _tiers) external {
+        require(msg.sender == owner() || msg.sender == protocolAdmin, "Must be owner or protocolAdmin");
         require(_addresses.length == _tiers.length, "Arrays length mismatch");
         require(_addresses.length > 0, "Empty arrays");
 
@@ -208,11 +185,7 @@ contract Daao is Ownable, ReentrancyGuard {
                 whitelistedCount++;
             }
 
-            whitelistInfo[user] = WhitelistInfo({
-                tier: newTier,
-                addedAt: block.timestamp,
-                isActive: true
-            });
+            whitelistInfo[user] = WhitelistInfo({tier: newTier, addedAt: block.timestamp, isActive: true});
 
             emit UpdateWhitelist(_addresses[i], _tiers[i]);
         }
@@ -228,18 +201,12 @@ contract Daao is Ownable, ReentrancyGuard {
     }
 
     function removeFromWhitelist(address removedAddress) external {
-        require(
-            msg.sender == owner() || msg.sender == protocolAdmin,
-            "Must be owner or protocolAdmin"
-        );
+        require(msg.sender == owner() || msg.sender == protocolAdmin, "Must be owner or protocolAdmin");
 
         require(removedAddress != address(0), "Invalid address");
 
         WhitelistInfo storage _userInfo = whitelistInfo[removedAddress];
-        require(
-            _userInfo.isActive,
-            "Address not whitelisted"
-        );
+        require(_userInfo.isActive, "Address not whitelisted");
         _userInfo.isActive = false;
         _userInfo.tier = WhitelistTier.None;
         whitelistedCount--;
@@ -248,10 +215,7 @@ contract Daao is Ownable, ReentrancyGuard {
     }
 
     function updateTierLimit(WhitelistTier _tier, uint256 _newLimit) external {
-        require(
-            msg.sender == owner() || msg.sender == protocolAdmin,
-            "Not authorized"
-        );
+        require(msg.sender == owner() || msg.sender == protocolAdmin, "Not authorized");
         require(_tier != WhitelistTier.None, "Invalid tier");
         require(_newLimit <= fundraisingGoal, "Invalid limit");
 
@@ -269,11 +233,8 @@ contract Daao is Ownable, ReentrancyGuard {
     }
 
     //Finalize the fundraising and distribute tokens
-    function finalizeFundraising(uint256 amount0Min, uint256 amount1Min) external{
-        require(
-            msg.sender == owner() || msg.sender == protocolAdmin,
-            "Not authorized"
-        );
+    function finalizeFundraising(uint256 amount0Min, uint256 amount1Min) external {
+        require(msg.sender == owner() || msg.sender == protocolAdmin, "Not authorized");
         require(goalReached, "Fundraising goal not reached");
         require(!fundraisingFinalized, "DAO tokens already minted");
 
@@ -286,9 +247,8 @@ contract Daao is Ownable, ReentrancyGuard {
         for (uint256 i = 0; i < contributorCount; i++) {
             address contributor = contributors.at(i);
             uint256 contribution = contributions[contributor];
-            if(contribution > 0) {
-                uint256 tokensToMint = (contribution * SUPPLY_TO_FUNDRAISERS) /
-                    totalRaised;
+            if (contribution > 0) {
+                uint256 tokensToMint = (contribution * SUPPLY_TO_FUNDRAISERS) / totalRaised;
                 token.mint(contributor, tokensToMint);
                 emit MintDetails(contributor, tokensToMint);
             }
@@ -306,7 +266,7 @@ contract Daao is Ownable, ReentrancyGuard {
         uint256 amountToken0ForLP;
         uint256 amountToken1ForLP;
 
-        if(daoToken < address(PAYMENT_TOKEN)){
+        if (daoToken < address(PAYMENT_TOKEN)) {
             token0 = daoToken;
             token1 = address(PAYMENT_TOKEN);
             amountToken0ForLP = daoTokensForLP;
@@ -318,8 +278,8 @@ contract Daao is Ownable, ReentrancyGuard {
             amountToken1ForLP = daoTokensForLP;
         }
 
-        uint256 price = FullMath.mulDiv(amountToken1ForLP, 1 << 96, amountToken0ForLP);  // Multiply by 2^96 first
-        uint160 sqrtPriceX96 = uint160(Math.sqrt(price) * (1 << 48));  // Then multiply sqrt by 2^48 (half of 96)
+        uint256 price = FullMath.mulDiv(amountToken1ForLP, 1 << 96, amountToken0ForLP); // Multiply by 2^96 first
+        uint160 sqrtPriceX96 = uint160(Math.sqrt(price) * (1 << 48)); // Then multiply sqrt by 2^48 (half of 96)
 
         int24 initialTick = TickMath.getTickAtSqrtRatio(sqrtPriceX96);
 
@@ -327,7 +287,6 @@ contract Daao is Ownable, ReentrancyGuard {
         IUniswapV3Pool(pool).initialize(sqrtPriceX96);
 
         int24 tickSpacing = IUniswapV3Pool(pool).tickSpacing();
-
 
         int24 tickSpacedLower = int24((initialTick - tickSpacing * 1000) / tickSpacing) * tickSpacing;
         int24 tickSpacedUpper = int24((initialTick + tickSpacing * 1000) / tickSpacing) * tickSpacing;
@@ -337,47 +296,37 @@ contract Daao is Ownable, ReentrancyGuard {
         SafeERC20.safeIncreaseAllowance(IERC20(token0), address(POSITION_MANAGER), amountToken0ForLP);
         SafeERC20.safeIncreaseAllowance(IERC20(token1), address(POSITION_MANAGER), amountToken1ForLP);
 
-        INonfungiblePositionManager.MintParams
-            memory params = INonfungiblePositionManager.MintParams(
-                token0,
-                token1,
-                UNISWAP_V3_FEE,
-                tickSpacedLower,
-                tickSpacedUpper,
-                amountToken0ForLP,
-                amountToken1ForLP,
-                amount0Min,
-                amount1Min,
-                address(this),
-                block.timestamp
-            );
-        (uint256 tokenId, , uint256 amount0Minted, uint256 amount1Minted) = POSITION_MANAGER.mint(params);
+        INonfungiblePositionManager.MintParams memory params = INonfungiblePositionManager.MintParams(
+            token0,
+            token1,
+            UNISWAP_V3_FEE,
+            tickSpacedLower,
+            tickSpacedUpper,
+            amountToken0ForLP,
+            amountToken1ForLP,
+            amount0Min,
+            amount1Min,
+            address(this),
+            block.timestamp
+        );
+        (uint256 tokenId,, uint256 amount0Minted, uint256 amount1Minted) = POSITION_MANAGER.mint(params);
         emit LPTokenMinted(tokenId);
 
-        if(amount0Minted < amountToken0ForLP){
+        if (amount0Minted < amountToken0ForLP) {
             SafeERC20.safeTransfer(IERC20(token0), owner(), amountToken0ForLP - amount0Minted);
         }
-        if(amount1Minted < amountToken1ForLP){
+        if (amount1Minted < amountToken1ForLP) {
             SafeERC20.safeTransfer(IERC20(token1), owner(), amountToken1ForLP - amount1Minted);
         }
 
         // Deploy the liquidity locker
         address lockerAddress = liquidityLockerFactory.deploy(
-            address(POSITION_MANAGER),
-            owner(),
-            uint64(fundExpiry),
-            tokenId,
-            lpFeesCut,
-            address(this)
+            address(POSITION_MANAGER), owner(), uint64(fundExpiry), tokenId, lpFeesCut, address(this)
         );
         emit LockerDeployed(lockerAddress);
 
         // Transfer LP token to the locker
-        POSITION_MANAGER.safeTransferFrom(
-            address(this),
-            lockerAddress,
-            tokenId
-        );
+        POSITION_MANAGER.safeTransferFrom(address(this), lockerAddress, tokenId);
         emit TokenTransferredToLocker(tokenId, lockerAddress);
 
         // Initialize the locker
@@ -391,10 +340,7 @@ contract Daao is Ownable, ReentrancyGuard {
     // Allow contributors to get a refund if the goal is not reached
     function refund() external nonReentrant {
         require(!goalReached, "Fundraising goal was reached");
-        require(
-            block.timestamp > fundraisingDeadline,
-            "Deadline not reached yet"
-        );
+        require(block.timestamp > fundraisingDeadline, "Deadline not reached yet");
         require(contributions[msg.sender] > 0, "No contributions to refund");
 
         uint256 contributedAmount = contributions[msg.sender];
@@ -409,22 +355,18 @@ contract Daao is Ownable, ReentrancyGuard {
     }
 
     // This function is for the DAO manager to trade
-    function execute(
-        address[] calldata contracts,
-        bytes[] calldata data,
-        uint256[] calldata approveAmounts
-    ) external onlyOwner {
+    function execute(address[] calldata contracts, bytes[] calldata data, uint256[] calldata approveAmounts)
+        external
+        onlyOwner
+    {
         require(fundraisingFinalized, "fundraisingFinalized is false");
-        require(
-            contracts.length == data.length && data.length == approveAmounts.length,
-            "Array lengths mismatch"
-        );
+        require(contracts.length == data.length && data.length == approveAmounts.length, "Array lengths mismatch");
 
         for (uint256 i = 0; i < contracts.length; i++) {
-            if(approveAmounts[i] > 0) {
+            if (approveAmounts[i] > 0) {
                 SafeERC20.safeIncreaseAllowance(IERC20(PAYMENT_TOKEN), contracts[i], approveAmounts[i]);
             }
-            (bool success, ) = contracts[i].call(data[i]);
+            (bool success,) = contracts[i].call(data[i]);
             require(success, "Call failed");
         }
     }
@@ -435,19 +377,11 @@ contract Daao is Ownable, ReentrancyGuard {
         ILocker(liquidityLocker).extendFundExpiry(newFundExpiry);
     }
 
-    function extendFundraisingDeadline(
-        uint256 newFundraisingDeadline
-    ) external {
-        require(
-            msg.sender == owner() || msg.sender == protocolAdmin,
-            "Must be owner or protocolAdmin"
-        );
+    function extendFundraisingDeadline(uint256 newFundraisingDeadline) external {
+        require(msg.sender == owner() || msg.sender == protocolAdmin, "Must be owner or protocolAdmin");
         require(!goalReached, "Fundraising goal was reached");
         require(block.timestamp <= fundraisingDeadline, "can not extend deadline after deadline is passed");
-        require(
-            newFundraisingDeadline > fundraisingDeadline,
-            "new fundraising deadline must be > old one"
-        );
+        require(newFundraisingDeadline > fundraisingDeadline, "new fundraising deadline must be > old one");
         fundraisingDeadline = newFundraisingDeadline;
     }
 
@@ -457,12 +391,7 @@ contract Daao is Ownable, ReentrancyGuard {
         SafeERC20.safeTransfer(IERC20(PAYMENT_TOKEN), protocolAdmin, IERC20(PAYMENT_TOKEN).balanceOf(address(this)));
     }
 
-    function onERC721Received(
-        address,
-        address,
-        uint256,
-        bytes calldata
-    ) external pure returns (bytes4) {
+    function onERC721Received(address, address, uint256, bytes calldata) external pure returns (bytes4) {
         return IERC721Receiver.onERC721Received.selector;
     }
 

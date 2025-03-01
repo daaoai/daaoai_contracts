@@ -5,4 +5,4 @@ contract MockFailingReceiver {
     function failingFunction() external pure {
         revert("Function failed");
     }
-} 
+}

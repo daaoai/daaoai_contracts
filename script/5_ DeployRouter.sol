@@ -7,7 +7,7 @@ import {CLPoolRouter} from "../src/CLPoolRouter.sol";
 import {Quoter} from "../src/Quoter.sol";
 
 contract DeployCLPoolRouter is Script {
-    function run() public{
+    function run() public {
         vm.startBroadcast();
 
         CLPoolRouter swapTest = new CLPoolRouter();
