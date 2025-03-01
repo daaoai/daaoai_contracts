@@ -3,7 +3,7 @@ pragma solidity ^0.8.0;
 
 import {Script} from "forge-std/Script.sol";
 import {CLPoolRouter} from "../src/CLPoolRouter.sol";
-import {ICLPool} from "../src/interfaces/ICLPool.sol";
+import {IUniswapV3Pool} from "@uniswap/v3-core/contracts/interfaces/IUniswapV3Pool.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 contract DeployCLPoolRouter is Script {
@@ -13,7 +13,7 @@ contract DeployCLPoolRouter is Script {
 
         address pool = 0x6Ffc554157E44699641B47EE279c9BbB8AaAb4e5;
 
-        address DAO = ICLPool(pool).token0() == MODE_TOKEN_ADDRESS ? ICLPool(pool).token1() : ICLPool(pool).token0();
+        address DAO = IUniswapV3Pool(pool).token0() == MODE_TOKEN_ADDRESS ? IUniswapV3Pool(pool).token1() : IUniswapV3Pool(pool).token0();
 
         CLPoolRouter swapTest = CLPoolRouter(0xC3a15f812901205Fc4406Cd0dC08Fe266bF45a1E);
 

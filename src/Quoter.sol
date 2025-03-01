@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 pragma solidity ^0.8.20;
 
-import {ICLPool} from "./interfaces/ICLPool.sol";
+import {IUniswapV3Pool} from "@uniswap/v3-core/contracts/interfaces/IUniswapV3Pool.sol";
 
 /// @title Provides quotes for swaps
 /// @notice Allows getting the expected amount out or amount in for a given swap without executing the swap
@@ -12,7 +12,7 @@ contract Quoter {
     /// @dev Transient storage variable used to check a safety condition in exact output swaps.
     uint256 private amountOutCached;
 
-    address public constant VELODROM_FACTORY = 0x04625B046C69577EfC40e6c0Bb83CDBAfab5a55F;
+    address public constant UNISWAP_V3_FACTORY = 0x04625B046C69577EfC40e6c0Bb83CDBAfab5a55F;
 
     /// @dev The minimum value that can be returned from #getSqrtRatioAtTick. Equivalent to getSqrtRatioAtTick(MIN_TICK)
     uint160 internal constant MIN_SQRT_RATIO = 4295128739;
@@ -75,12 +75,12 @@ contract Quoter {
         uint256 amountIn,
         uint160 sqrtPriceLimitX96
     ) public returns (uint256 amountOut) {
-        address tokenIn = zeroForOne ? ICLPool(pool).token0() : ICLPool(pool).token1();
-        address tokenOut = zeroForOne ? ICLPool(pool).token1() : ICLPool(pool).token0();
-        uint24 fee = ICLPool(pool).fee();
+        address tokenIn = zeroForOne ? IUniswapV3Pool(pool).token0() : IUniswapV3Pool(pool).token1();
+        address tokenOut = zeroForOne ? IUniswapV3Pool(pool).token1() : IUniswapV3Pool(pool).token0();
+        uint24 fee = IUniswapV3Pool(pool).fee();
 
         try
-            ICLPool(pool).swap(
+            IUniswapV3Pool(pool).swap(
                 address(this), // address(0) might cause issues with some tokens
                 zeroForOne,
                 int256(amountIn),
@@ -100,14 +100,14 @@ contract Quoter {
         uint256 amountOut,
         uint160 sqrtPriceLimitX96
     ) public returns (uint256 amountIn) {
-        address tokenIn = zeroForOne ? ICLPool(pool).token0() : ICLPool(pool).token1();
-        address tokenOut = zeroForOne ? ICLPool(pool).token1() : ICLPool(pool).token0();
-        uint24 fee = ICLPool(pool).fee();
+        address tokenIn = zeroForOne ? IUniswapV3Pool(pool).token0() : IUniswapV3Pool(pool).token1();
+        address tokenOut = zeroForOne ? IUniswapV3Pool(pool).token1() : IUniswapV3Pool(pool).token0();
+        uint24 fee = IUniswapV3Pool(pool).fee();
 
         // if no price limit has been specified, cache the output amount for comparison in the swap callback
         if (sqrtPriceLimitX96 == 0) amountOutCached = amountOut;
         try
-            ICLPool(pool).swap(
+            IUniswapV3Pool(pool).swap(
                 address(this), // address(0) might cause issues with some tokens
                 zeroForOne,
                 int256(amountOut),
