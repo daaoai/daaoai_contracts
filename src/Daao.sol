@@ -9,7 +9,7 @@ import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import {ILockerFactory, ILocker} from "./interface.sol";
+import {ILockerFactory, ILocker, IWETH} from "./interface.sol";
 import {INonfungiblePositionManager} from "@uniswap/v3-periphery/contracts/interfaces/INonfungiblePositionManager.sol";
 import {IUniswapV3Pool} from "@uniswap/v3-core/contracts/interfaces/IUniswapV3Pool.sol";
 import {IUniswapV3Factory} from "@uniswap/v3-core/contracts/interfaces/IUniswapV3Factory.sol";
@@ -49,11 +49,11 @@ contract Daao is Ownable, ReentrancyGuard {
     uint256 public SILVER_DEFAULT_LIMIT = 0.1 ether;
     uint256 public PLATINUM_DEFAULT_LIMIT = 1 ether;
 
-    IUniswapV3Factory public constant UNISWAP_V3_FACTORY =
-        IUniswapV3Factory(0x961235a9020B05C44DF1026D956D1F4D78014276);
-    INonfungiblePositionManager public constant POSITION_MANAGER =
-        INonfungiblePositionManager(0x3dCc735C74F10FE2B9db2BB55C40fbBbf24490f7);
-    address public constant PAYMENT_TOKEN = 0xDfc7C877a950e49D2610114102175A06C2e3167a;
+    IUniswapV3Factory public immutable UNISWAP_V3_FACTORY;
+    INonfungiblePositionManager public immutable POSITION_MANAGER;
+    address public immutable PAYMENT_TOKEN;
+    bool private _isPaymentTokenNative;
+
     ILockerFactory public liquidityLockerFactory;
     address public liquidityLocker;
 
@@ -106,7 +106,9 @@ contract Daao is Ownable, ReentrancyGuard {
         uint256 _fundExpiry,
         address _daoManager,
         address _liquidityLockerFactory,
-        address _protocolAdmin
+        address _protocolAdmin,
+        address _paymentToken,
+        address _v3NonfungiblePositionManager
     ) Ownable(_daoManager) {
         require(
             _fundraisingGoal > 0,
@@ -127,6 +129,10 @@ contract Daao is Ownable, ReentrancyGuard {
         fundExpiry = _fundExpiry;
         liquidityLockerFactory = ILockerFactory(_liquidityLockerFactory);
         protocolAdmin = _protocolAdmin;
+        PAYMENT_TOKEN = _paymentToken;
+        POSITION_MANAGER = INonfungiblePositionManager(_v3NonfungiblePositionManager);
+        UNISWAP_V3_FACTORY = IUniswapV3Factory(POSITION_MANAGER.factory());
+        _isPaymentTokenNative = _paymentToken == POSITION_MANAGER.WETH9() ? true : false;
 
         // Teir allocation
         tierLimits[WhitelistTier.Platinum] = PLATINUM_DEFAULT_LIMIT;
@@ -157,7 +163,13 @@ contract Daao is Ownable, ReentrancyGuard {
         }
 
         if (effectiveContribution > 0) {
-            SafeERC20.safeTransferFrom(IERC20(PAYMENT_TOKEN), msg.sender, address(this), effectiveContribution);
+            // If the payment token is native, we need to wrap it to WETH
+            if(_isPaymentTokenNative){
+                require(msg.value == _amount, "Amount must be equal to msg.value");
+                IWETH(PAYMENT_TOKEN).deposit{value: _amount}();
+            } else {
+                SafeERC20.safeTransferFrom(IERC20(PAYMENT_TOKEN), msg.sender, address(this), effectiveContribution);
+            }
 
             if (contributions[msg.sender] == 0) {
                 contributors.add(msg.sender);

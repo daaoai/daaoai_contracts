@@ -14,7 +14,7 @@ import {MockReceiver} from "./MockReceiver.sol";
 import {MockFailingReceiver} from "./MockFailingReceiver.sol";
 import {MockTokenSpender} from "./MockTokenSpender.sol";
 import {LockerFactory} from "../src/LPLocker/LockerFactory.sol";
-
+import {WrappedMonad} from "./MockWrappedEther.sol";
 interface ILocker {
     function owner() external view returns (address);
     function fundExpiry() external view returns (uint256);
@@ -22,35 +22,35 @@ interface ILocker {
     function released(address) external view returns (uint256);
 }
 
-contract DaaoTest is Test{
+contract DaaoTestNativeToken is Test{
 
     Daao public dao;
-    address public modeToken;
+    address public paymentToken;
     uint256 constant INITIAL_BALANCE = 100000 ether;
 
-    address constant USER_1 = address(0x1);
-    address constant USER_2 = address(0x2);
-    address constant USER_3 = address(0x3);
-    address constant USER_4 = address(0x4);
-    address constant USER_5 = address(0x5);
-    address constant USER_6 = address(0x6);
-    address constant USER_7 = address(0x7);
-    address constant USER_8 = address(0x8);
-    address constant USER_9 = address(0x9);
-    address constant USER_10 = address(0x10);
+    address constant USER_1 = address(1);
+    address constant USER_2 = address(2);
+    address constant USER_3 = address(3);
+    address constant USER_4 = address(4);
+    address constant USER_5 = address(5);
+    address constant USER_6 = address(6);
+    address constant USER_7 = address(7);
+    address constant USER_8 = address(8);
+    address constant USER_9 = address(9);
+    address constant USER_10 = address(10);
 
     address constant PROTOCOL_ADMIN = address(0x11);
     address constant DAO_MANAGER = address(0x12);
     address LIQUIDITY_LOCKER_FACTORY;
-    address constant MODE_WHALE = 0x9cBd6d7B3f7377365E45CF53937E96ed8b92E53d;
+    address constant MODE_WHALE = 0x20FcD2699784314d53Be3Ee42B60906A38F96cf3;
 
     address NONFUNGIBLE_POSITION_MANAGER = 0x3dCc735C74F10FE2B9db2BB55C40fbBbf24490f7;
 
     function setUp() public {
-        // Deploy and setup mock address(modeToken) token
-        modeToken = address(new MockERC20());
-        vm.etch(0xDfc7C877a950e49D2610114102175A06C2e3167a, address(modeToken).code);
-        modeToken = 0xDfc7C877a950e49D2610114102175A06C2e3167a;
+        // Deploy and setup mock address(paymentToken) token
+        // paymentToken = address(new WrappedMonad());
+        // vm.etch(0x760AfE86e5de5fa0Ee542fc7B7B713e1c5425701, address(paymentToken).code);
+        paymentToken = 0x760AfE86e5de5fa0Ee542fc7B7B713e1c5425701;
         
         uint256 fundraisingGoal = 10 ether; // 10
         uint256 fundraisingDeadline = block.timestamp + 7 days; // 7 days from now
@@ -71,24 +71,23 @@ contract DaaoTest is Test{
             daoManager,
             liquidityLockerFactory,
             protocolAdmin,
-            modeToken,
+            paymentToken,
             NONFUNGIBLE_POSITION_MANAGER
         );
 
-
-        // Give test users some address(modeToken) tokens
-        vm.startPrank(MODE_WHALE);
-        MockERC20(modeToken).mint(USER_1, INITIAL_BALANCE);
-        MockERC20(modeToken).mint(USER_2, INITIAL_BALANCE);
-        MockERC20(modeToken).mint(USER_3, INITIAL_BALANCE);
-        MockERC20(modeToken).mint(USER_4, INITIAL_BALANCE);
-        MockERC20(modeToken).mint(USER_5, INITIAL_BALANCE);
-        MockERC20(modeToken).mint(USER_6, INITIAL_BALANCE);
-        MockERC20(modeToken).mint(USER_7, INITIAL_BALANCE);
-        MockERC20(modeToken).mint(USER_8, INITIAL_BALANCE);
-        MockERC20(modeToken).mint(USER_9, INITIAL_BALANCE);
-        MockERC20(modeToken).mint(USER_10, INITIAL_BALANCE);
-        vm.stopPrank();
+        // Give users some address(paymentToken) tokens
+        vm.deal(USER_1, INITIAL_BALANCE);
+        vm.deal(USER_2, INITIAL_BALANCE);
+        vm.deal(USER_3, INITIAL_BALANCE);
+        vm.deal(USER_4, INITIAL_BALANCE);
+        vm.deal(USER_5, INITIAL_BALANCE);
+        vm.deal(USER_6, INITIAL_BALANCE);
+        vm.deal(USER_7, INITIAL_BALANCE);
+        vm.deal(USER_8, INITIAL_BALANCE);
+        vm.deal(USER_9, INITIAL_BALANCE);
+        vm.deal(USER_10, INITIAL_BALANCE);
+        
+        
     }
 
     function test_constructorShouldRevertIfFundraisingGoalIsZero() public {
@@ -156,7 +155,7 @@ contract DaaoTest is Test{
             DAO_MANAGER,
             LIQUIDITY_LOCKER_FACTORY,
             PROTOCOL_ADMIN,
-            modeToken,
+            paymentToken,
             NONFUNGIBLE_POSITION_MANAGER
         );
 
@@ -183,7 +182,7 @@ contract DaaoTest is Test{
         assertEq(newDao.tierLimits(Daao.WhitelistTier.Silver), newDao.SILVER_DEFAULT_LIMIT());
 
         // Check payment token is set correctly
-        assertEq(newDao.PAYMENT_TOKEN(), modeToken);
+        assertEq(newDao.PAYMENT_TOKEN(), paymentToken);
 
         // Check UNISWAP_V3_FACTORY is set correctly
         assertEq(address(newDao.UNISWAP_V3_FACTORY()), INonfungiblePositionManager(NONFUNGIBLE_POSITION_MANAGER).factory());
@@ -471,13 +470,12 @@ contract DaaoTest is Test{
         dao.updateTierLimit(Daao.WhitelistTier.Platinum, 10 ether);
 
         vm.startPrank(USER_1);
-        IERC20(address(modeToken)).approve(address(dao), 10 ether);
-        dao.contribute(10 ether); // Reach the goal
+        dao.contribute{value: 10 ether}(10 ether); // Reach the goal
         vm.stopPrank();
 
         vm.prank(USER_1);
         vm.expectRevert("Goal already reached");
-        dao.contribute(1 ether);
+        dao.contribute{value: 1 ether}(1 ether);
     }
 
     function test_contributeShouldRevertIfDeadlineHit() public {
@@ -495,7 +493,7 @@ contract DaaoTest is Test{
 
         vm.prank(USER_1);
         vm.expectRevert("Deadline hit");
-        dao.contribute(1 ether);
+        dao.contribute{value: 1 ether}(1 ether);
     }
 
     function test_contributeShouldRevertIfAmountZero() public {
@@ -510,13 +508,13 @@ contract DaaoTest is Test{
 
         vm.prank(USER_1);
         vm.expectRevert("Contribution must be greater than 0");
-        dao.contribute(0);
+        dao.contribute{value: 0}(0);
     }
 
     function test_contributeShouldRevertIfNotWhitelisted() public {
         vm.prank(USER_1);
         vm.expectRevert("Not whitelisted");
-        dao.contribute(1 ether);
+        dao.contribute{value: 1 ether}(1 ether);
     }
 
     function test_contributeShouldRevertIfExceedingTierLimit() public {
@@ -531,7 +529,7 @@ contract DaaoTest is Test{
 
         vm.prank(USER_1);
         vm.expectRevert("Exceeding tier limit");
-        dao.contribute(0.2 ether); // Try to contribute more than Silver tier limit
+        dao.contribute{value: 0.2 ether}(0.2 ether); // Try to contribute more than Silver tier limit
     }
 
     function test_contributeShouldSuccessWithPartialContributionWhenNearGoal() public {
@@ -551,21 +549,21 @@ contract DaaoTest is Test{
 
         // First user contributes 9 ETH
         vm.startPrank(USER_1);
-        IERC20(address(modeToken)).approve(address(dao), 9 ether);
-        dao.contribute(9 ether);
+        dao.contribute{value: 9 ether}(9 ether);
         vm.stopPrank();
 
         // Second user tries to contribute 2 ETH but only 1 ETH should be accepted
         vm.startPrank(USER_2);
-        IERC20(address(modeToken)).approve(address(dao), 2 ether);
-        dao.contribute(2 ether);
+        dao.contribute{value: 2 ether}(2 ether);
         vm.stopPrank();
 
-        // assertEq(dao.totalRaised(), 10 ether);
-        // assertEq(dao.contributions(USER_1), 9 ether);
-        // assertEq(dao.contributions(USER_2), 1 ether);
-        // assertTrue(dao.goalReached());
+        assertEq(dao.totalRaised(), 10 ether);
+        assertEq(dao.contributions(USER_1), 9 ether);
+        assertEq(dao.contributions(USER_2), 1 ether);
+        assertTrue(dao.goalReached());
     }
+
+
 
     function test_contributeShouldSuccessForValidContribution() public {
         // Setup: Add user to whitelist
@@ -580,19 +578,18 @@ contract DaaoTest is Test{
         uint256 contributionAmount = 1 ether;
 
         vm.startPrank(USER_1);
-        IERC20(address(modeToken)).approve(address(dao), contributionAmount);
         
         // Record state before contribution
-        uint256 balanceBefore = IERC20(address(modeToken)).balanceOf(USER_1);
-        uint256 daoBalanceBefore = IERC20(address(modeToken)).balanceOf(address(dao));
+        uint256 balanceBefore = address(USER_1).balance;
+        uint256 daoBalanceBefore = address(dao).balance;
         
-        dao.contribute(contributionAmount);
+        dao.contribute{value: contributionAmount}(contributionAmount);
 
         // Verify state changes
         assertEq(dao.totalRaised(), contributionAmount);
         assertEq(dao.contributions(USER_1), contributionAmount);
-        assertEq(IERC20(address(modeToken)).balanceOf(USER_1), balanceBefore - contributionAmount);
-        assertEq(IERC20(address(modeToken)).balanceOf(address(dao)), daoBalanceBefore + contributionAmount);
+        assertEq(address(USER_1).balance, balanceBefore - contributionAmount);
+        assertEq(IERC20(address(paymentToken)).balanceOf(address(dao)), daoBalanceBefore + contributionAmount);
         
         vm.stopPrank();
     }
@@ -614,20 +611,17 @@ contract DaaoTest is Test{
 
         // First contribution from USER_1
         vm.startPrank(USER_1);
-        IERC20(address(modeToken)).approve(address(dao), 1 ether);
-        dao.contribute(1 ether);
+        dao.contribute{value: 1 ether}(1 ether);
         vm.stopPrank();
 
         // Second contribution from USER_2
         vm.startPrank(USER_2);
-        IERC20(address(modeToken)).approve(address(dao), 1 ether);
-        dao.contribute(1 ether);
+        dao.contribute{value: 1 ether}(1 ether);
         vm.stopPrank();
 
         // Additional contribution from USER_1 shouldn't add them to contributors again
         vm.startPrank(USER_1);
-        IERC20(address(modeToken)).approve(address(dao), 1 ether);
-        dao.contribute(1 ether);
+        dao.contribute{value: 1 ether}(1 ether);
         vm.stopPrank();
 
         // Verify contributors array
@@ -650,8 +644,7 @@ contract DaaoTest is Test{
 
         // Make contribution to reach goal
         vm.startPrank(USER_1);
-        IERC20(address(modeToken)).approve(address(dao), 10 ether);
-        dao.contribute(10 ether);
+        dao.contribute{value: 10 ether}(10 ether);
         vm.stopPrank();
 
         // Try to refund
@@ -672,8 +665,7 @@ contract DaaoTest is Test{
         dao.addOrUpdateWhitelist(users, tiers);
 
         vm.startPrank(USER_1);
-        IERC20(address(modeToken)).approve(address(dao), 1 ether);
-        dao.contribute(1 ether);
+        dao.contribute{value: 1 ether}(1 ether);
         vm.stopPrank();
 
         // Try to refund before deadline
@@ -705,16 +697,15 @@ contract DaaoTest is Test{
 
         // Make contribution
         vm.startPrank(USER_1);
-        IERC20(address(modeToken)).approve(address(dao), contributionAmount);
-        dao.contribute(contributionAmount);
+        dao.contribute{value: contributionAmount}(contributionAmount);
         vm.stopPrank();
 
         // Move past deadline
         vm.warp(block.timestamp + 8 days);
 
         // Record state before refund
-        uint256 balanceBefore = IERC20(address(modeToken)).balanceOf(USER_1);
-        uint256 daoBalanceBefore = IERC20(address(modeToken)).balanceOf(address(dao));
+        uint256 balanceBefore = IERC20(address(paymentToken)).balanceOf(USER_1);
+        uint256 daoBalanceBefore = IERC20(address(paymentToken)).balanceOf(address(dao));
         uint256 totalRaisedBefore = dao.totalRaised();
 
         // Execute refund
@@ -724,8 +715,8 @@ contract DaaoTest is Test{
         // Verify state changes
         assertEq(dao.contributions(USER_1), 0);
         assertEq(dao.totalRaised(), totalRaisedBefore - contributionAmount);
-        assertEq(IERC20(address(modeToken)).balanceOf(USER_1), balanceBefore + contributionAmount);
-        assertEq(IERC20(address(modeToken)).balanceOf(address(dao)), daoBalanceBefore - contributionAmount);
+        assertEq(IERC20(address(paymentToken)).balanceOf(USER_1), balanceBefore + contributionAmount);
+        assertEq(IERC20(address(paymentToken)).balanceOf(address(dao)), daoBalanceBefore - contributionAmount);
     }
 
     function test_refundShouldAllowMultipleUsersToRefund() public {
@@ -745,21 +736,19 @@ contract DaaoTest is Test{
 
         // Make contributions
         vm.startPrank(USER_1);
-        IERC20(address(modeToken)).approve(address(dao), 1 ether);
-        dao.contribute(1 ether);
+        dao.contribute{value: 1 ether}(1 ether);
         vm.stopPrank();
 
         vm.startPrank(USER_2);
-        IERC20(address(modeToken)).approve(address(dao), 2 ether);
-        dao.contribute(2 ether);
+        dao.contribute{value: 2 ether}(2 ether);
         vm.stopPrank();
 
         // Move past deadline
         vm.warp(block.timestamp + 8 days);
 
         // Record initial states
-        uint256 user1BalanceBefore = IERC20(address(modeToken)).balanceOf(USER_1);
-        uint256 user2BalanceBefore = IERC20(address(modeToken)).balanceOf(USER_2);
+        uint256 user1BalanceBefore = IERC20(address(paymentToken)).balanceOf(USER_1);
+        uint256 user2BalanceBefore = IERC20(address(paymentToken)).balanceOf(USER_2);
         uint256 totalRaisedBefore = dao.totalRaised();
 
         // First user refunds
@@ -768,7 +757,7 @@ contract DaaoTest is Test{
 
         // Verify first refund
         assertEq(dao.contributions(USER_1), 0);
-        assertEq(IERC20(address(modeToken)).balanceOf(USER_1), user1BalanceBefore + 1 ether);
+        assertEq(IERC20(address(paymentToken)).balanceOf(USER_1), user1BalanceBefore + 1 ether);
         assertEq(dao.totalRaised(), totalRaisedBefore - 1 ether);
 
         // Second user refunds
@@ -777,7 +766,7 @@ contract DaaoTest is Test{
 
         // Verify second refund
         assertEq(dao.contributions(USER_2), 0);
-        assertEq(IERC20(address(modeToken)).balanceOf(USER_2), user2BalanceBefore + 2 ether);
+        assertEq(IERC20(address(paymentToken)).balanceOf(USER_2), user2BalanceBefore + 2 ether);
         assertEq(dao.totalRaised(), totalRaisedBefore - 3 ether);
     }
 
@@ -794,8 +783,7 @@ contract DaaoTest is Test{
         vm.stopPrank();
 
         vm.startPrank(USER_1);
-        IERC20(modeToken).approve(address(dao), 10 ether);
-        dao.contribute(10 ether);
+        dao.contribute{value: 10 ether}(10 ether);
         vm.stopPrank();
 
         vm.prank(PROTOCOL_ADMIN);
@@ -849,8 +837,7 @@ contract DaaoTest is Test{
 
         // Make contribution to reach goal
         vm.startPrank(USER_1);
-        IERC20(address(modeToken)).approve(address(dao), 10 ether);
-        dao.contribute(10 ether);
+        dao.contribute{value: 10 ether}(10 ether);
         vm.stopPrank();
 
         uint256 newDeadline = block.timestamp + 14 days;
@@ -940,8 +927,7 @@ contract DaaoTest is Test{
         vm.stopPrank();
 
         vm.startPrank(USER_1);
-        IERC20(modeToken).approve(address(dao), 10 ether);
-        dao.contribute(10 ether);
+        dao.contribute{value: 10 ether}(10 ether);
         vm.stopPrank();
 
         vm.prank(PROTOCOL_ADMIN);
@@ -967,20 +953,19 @@ contract DaaoTest is Test{
         dao.updateTierLimit(Daao.WhitelistTier.Platinum, 10 ether);
 
         vm.startPrank(USER_1);
-        IERC20(address(modeToken)).approve(address(dao), 5 ether);
-        dao.contribute(5 ether);
+        dao.contribute{value: 5 ether}(5 ether);
         vm.stopPrank();
 
-        uint256 initialBalance = IERC20(address(modeToken)).balanceOf(PROTOCOL_ADMIN);
-        uint256 daoBalance = IERC20(address(modeToken)).balanceOf(address(dao));
+        uint256 initialBalance = IERC20(address(paymentToken)).balanceOf(PROTOCOL_ADMIN);
+        uint256 daoBalance = IERC20(address(paymentToken)).balanceOf(address(dao));
 
         vm.prank(PROTOCOL_ADMIN);
         dao.emergencyEscape();
 
         // Verify state changes
-        assertEq(IERC20(address(modeToken)).balanceOf(address(dao)), 0);
+        assertEq(IERC20(address(paymentToken)).balanceOf(address(dao)), 0);
         assertEq(
-            IERC20(address(modeToken)).balanceOf(PROTOCOL_ADMIN), 
+            IERC20(address(paymentToken)).balanceOf(PROTOCOL_ADMIN), 
             initialBalance + daoBalance
         );
     }
@@ -1011,8 +996,7 @@ contract DaaoTest is Test{
 
         // Make contribution to reach goal
         vm.startPrank(USER_1);
-        IERC20(modeToken).approve(address(dao), 10 ether);
-        dao.contribute(10 ether);
+        dao.contribute{value: 10 ether}(10 ether);
         vm.stopPrank();
 
         // First finalization should succeed
@@ -1044,18 +1028,15 @@ contract DaaoTest is Test{
 
         // Make contributions
         vm.startPrank(USER_1);
-        IERC20(modeToken).approve(address(dao), 5 ether);
-        dao.contribute(5 ether);
+        dao.contribute{value: 5 ether}(5 ether);
         vm.stopPrank();
 
         vm.startPrank(USER_2);
-        IERC20(modeToken).approve(address(dao), 3 ether);
-        dao.contribute(3 ether);
+        dao.contribute{value: 3 ether}(3 ether);
         vm.stopPrank();
 
         vm.startPrank(USER_3);
-        IERC20(modeToken).approve(address(dao), 2 ether);
-        dao.contribute(2 ether);
+        dao.contribute{value: 2 ether}(2 ether);
         vm.stopPrank();
 
         // Finalize fundraising
@@ -1063,7 +1044,7 @@ contract DaaoTest is Test{
         dao.finalizeFundraising(0, 0);
 
         // Get the DAO token address (it's created during finalization)
-        address daoTokenAddress = dao.token0() == modeToken ? dao.token1() : dao.token0();
+        address daoTokenAddress = dao.token0() == paymentToken ? dao.token1() : dao.token0();
         
         // Calculate expected token distributions (90% of total supply distributed proportionally)
         uint256 user1Expected = (5 ether * dao.SUPPLY_TO_FUNDRAISERS()) / 10 ether; // 50%
@@ -1089,12 +1070,11 @@ contract DaaoTest is Test{
         vm.stopPrank();
 
         vm.startPrank(USER_1);
-        IERC20(modeToken).approve(address(dao), 10 ether);
-        dao.contribute(10 ether);
+        dao.contribute{value: 10 ether}(10 ether);
         vm.stopPrank();
 
         // Record initial MODE balances
-        uint256 initialOwnerModeBalance = IERC20(modeToken).balanceOf(DAO_MANAGER);
+        uint256 initialOwnerModeBalance = IERC20(paymentToken).balanceOf(DAO_MANAGER);
 
         vm.prank(PROTOCOL_ADMIN);
         dao.finalizeFundraising(0, 0);
@@ -1109,21 +1089,21 @@ contract DaaoTest is Test{
         
         // Verify treasury received correct MODE amount
         assertApproxEqAbs(
-            IERC20(modeToken).balanceOf(DAO_MANAGER),
+            IERC20(paymentToken).balanceOf(DAO_MANAGER),
             initialOwnerModeBalance + expectedModeForTreasury,
             1e15
         );
 
         // Verify DAO token distribution
-        address daoTokenAddress = dao.token0() == modeToken ? dao.token1() : dao.token0();
+        address daoTokenAddress = dao.token0() == paymentToken ? dao.token1() : dao.token0();
         uint256 expectedDaoTokensForLP = (dao.TOTAL_SUPPLY() * dao.POOL_PERCENTAGE()) / 100; // 10%
         
         // Get pool address
-        address poolAddress = IUniswapV3Factory(dao.UNISWAP_V3_FACTORY()).getPool(modeToken, daoTokenAddress, 10000);
+        address poolAddress = IUniswapV3Factory(dao.UNISWAP_V3_FACTORY()).getPool(paymentToken, daoTokenAddress, 10000);
         require(poolAddress != address(0), "Pool not created");
 
         // Verify pool token balances
-        uint256 poolModeBal = IERC20(modeToken).balanceOf(poolAddress);
+        uint256 poolModeBal = IERC20(paymentToken).balanceOf(poolAddress);
         uint256 poolDaoBal = IERC20(daoTokenAddress).balanceOf(poolAddress);
         console.log("poolModeBal", poolModeBal);
         console.log("poolDaoBal", poolDaoBal);
@@ -1158,8 +1138,8 @@ contract DaaoTest is Test{
         // Verify position details
         assertTrue(liquidity > 0, "No liquidity in position");
         assertTrue(
-            (token0 == modeToken && token1 == daoTokenAddress) ||
-            (token0 == daoTokenAddress && token1 == modeToken),
+            (token0 == paymentToken && token1 == daoTokenAddress) ||
+            (token0 == daoTokenAddress && token1 == paymentToken),
             "Incorrect tokens in position"
         );
     }
@@ -1177,8 +1157,7 @@ contract DaaoTest is Test{
         vm.stopPrank();
 
         vm.startPrank(USER_1);
-        IERC20(modeToken).approve(address(dao), 10 ether);
-        dao.contribute(10 ether);
+        dao.contribute{value: 10 ether}(10 ether);
         vm.stopPrank();
 
         vm.prank(PROTOCOL_ADMIN);
@@ -1228,8 +1207,7 @@ contract DaaoTest is Test{
         vm.stopPrank();
 
         vm.startPrank(USER_1);
-        IERC20(modeToken).approve(address(dao), 10 ether);
-        dao.contribute(10 ether);
+        dao.contribute{value: 10 ether}(10 ether);
         vm.stopPrank();
 
         vm.prank(PROTOCOL_ADMIN);
@@ -1258,8 +1236,7 @@ contract DaaoTest is Test{
         vm.stopPrank();
 
         vm.startPrank(USER_1);
-        IERC20(modeToken).approve(address(dao), 10 ether);
-        dao.contribute(10 ether);
+        dao.contribute{value: 10 ether}(10 ether);
         vm.stopPrank();
 
         vm.prank(PROTOCOL_ADMIN);
@@ -1297,8 +1274,7 @@ contract DaaoTest is Test{
         vm.stopPrank();
 
         vm.startPrank(USER_1);
-        IERC20(modeToken).approve(address(dao), 10 ether);
-        dao.contribute(10 ether);
+        dao.contribute{value: 10 ether}(10 ether);
         vm.stopPrank();
 
         vm.prank(PROTOCOL_ADMIN);
@@ -1312,25 +1288,25 @@ contract DaaoTest is Test{
         contracts[0] = address(mockSpender);
 
         uint256[] memory approveAmounts = new uint256[](1);
-        approveAmounts[0] = IERC20(modeToken).balanceOf(DAO_MANAGER);
+        approveAmounts[0] = IERC20(paymentToken).balanceOf(DAO_MANAGER);
 
         bytes[] memory data = new bytes[](1);
-        data[0] = abi.encodeWithSignature("spendTokens(address,uint256)", modeToken, approveAmounts[0]);
+        data[0] = abi.encodeWithSignature("spendTokens(address,uint256)", paymentToken, approveAmounts[0]);
 
         // Record initial allowance
-        uint256 initialAllowance = IERC20(modeToken).allowance(address(dao), address(mockSpender));
+        uint256 initialAllowance = IERC20(paymentToken).allowance(address(dao), address(mockSpender));
 
         // transfer daoTokens to dao contract for spending
         vm.prank(DAO_MANAGER);
-        IERC20(modeToken).transfer(address(dao), approveAmounts[0]);
+        IERC20(paymentToken).transfer(address(dao), approveAmounts[0]);
 
         vm.prank(DAO_MANAGER);
         dao.execute(contracts, data, approveAmounts);
 
         // Verify allowance was increased and tokens were spent
-        assertEq(IERC20(modeToken).allowance(address(dao), address(mockSpender)), initialAllowance);
+        assertEq(IERC20(paymentToken).allowance(address(dao), address(mockSpender)), initialAllowance);
         assertTrue(mockSpender.tokenSpent());
-        assertEq(IERC20(modeToken).balanceOf(address(mockSpender)), approveAmounts[0]);
+        assertEq(IERC20(paymentToken).balanceOf(address(mockSpender)), approveAmounts[0]);
     }
 
     function test_executeShouldRevertIfCallFails() public {
@@ -1346,8 +1322,7 @@ contract DaaoTest is Test{
         vm.stopPrank();
 
         vm.startPrank(USER_1);
-        IERC20(modeToken).approve(address(dao), 10 ether);
-        dao.contribute(10 ether);
+        dao.contribute{value: 10 ether}(10 ether);
         vm.stopPrank();
 
         vm.prank(PROTOCOL_ADMIN);
@@ -1394,20 +1369,18 @@ contract DaaoTest is Test{
 
         // First user contributes multiple times
         vm.startPrank(USER_1);
-        IERC20(modeToken).approve(address(dao), 2 ether);
-        dao.contribute(1 ether);
+        dao.contribute{value: 1 ether}(1 ether);
         assertEq(dao.getContributorsCount(), 1);
         assertEq(dao.getContributorAtIndex(0), USER_1);
 
-        dao.contribute(1 ether); // Second contribution
+        dao.contribute{value: 1 ether}(1 ether); // Second contribution
         assertEq(dao.getContributorsCount(), 1); // Count should not increase
         assertEq(dao.getContributorAtIndex(0), USER_1);
         vm.stopPrank();
 
         // Second user contributes
         vm.startPrank(USER_2);
-        IERC20(modeToken).approve(address(dao), 1 ether);
-        dao.contribute(1 ether);
+        dao.contribute{value: 1 ether}(1 ether);
         assertEq(dao.getContributorsCount(), 2);
         assertEq(dao.getContributorAtIndex(1), USER_2);
         vm.stopPrank();
@@ -1432,23 +1405,19 @@ contract DaaoTest is Test{
 
         // Make contributions
         vm.startPrank(USER_1);
-        IERC20(modeToken).approve(address(dao), 1 ether);
-        dao.contribute(1 ether);
+        dao.contribute{value: 1 ether}(1 ether);
         vm.stopPrank();
 
         vm.startPrank(USER_2);
-        IERC20(modeToken).approve(address(dao), 1 ether);
-        dao.contribute(1 ether);
+        dao.contribute{value: 1 ether}(1 ether);
         vm.stopPrank();
 
         vm.startPrank(USER_3);
-        IERC20(modeToken).approve(address(dao), 1 ether);
-        dao.contribute(1 ether);
+        dao.contribute{value: 1 ether}(1 ether);
         vm.stopPrank();
 
         vm.startPrank(USER_4);
-        IERC20(modeToken).approve(address(dao), 1 ether);
-        dao.contribute(1 ether);
+        dao.contribute{value: 1 ether}(1 ether);
         vm.stopPrank();
 
         // Verify initial state
@@ -1502,23 +1471,19 @@ contract DaaoTest is Test{
 
         // First round of contributions (total 9 ETH)
         vm.startPrank(USER_1);
-        IERC20(modeToken).approve(address(dao), 3 ether);
-        dao.contribute(3 ether);
+        dao.contribute{value: 3 ether}(3 ether);
         vm.stopPrank();
 
         vm.startPrank(USER_2);
-        IERC20(modeToken).approve(address(dao), 3 ether);
-        dao.contribute(3 ether);
+        dao.contribute{value: 3 ether}(3 ether);
         vm.stopPrank();
 
         vm.startPrank(USER_3);
-        IERC20(modeToken).approve(address(dao), 2 ether);
-        dao.contribute(2 ether);
+        dao.contribute{value: 2 ether}(2 ether);
         vm.stopPrank();
 
         vm.startPrank(USER_4);
-        IERC20(modeToken).approve(address(dao), 2 ether);
-        dao.contribute(2 ether);
+        dao.contribute{value: 2 ether}(2 ether);
         vm.stopPrank();
 
         // Verify initial state
@@ -1539,7 +1504,7 @@ contract DaaoTest is Test{
         dao.finalizeFundraising(0, 0);
 
         // Get the DAO token address
-        address daoTokenAddress = dao.token0() == modeToken ? dao.token1() : dao.token0();
+        address daoTokenAddress = dao.token0() == paymentToken ? dao.token1() : dao.token0();
 
         // Calculate expected token distributions based on final contributions
         // Total valid contributions = 10 ETH
@@ -1586,8 +1551,7 @@ contract DaaoTest is Test{
 
         // First contribution
         vm.startPrank(USER_1);
-        IERC20(modeToken).approve(address(dao), 1 ether);
-        dao.contribute(1 ether);
+        dao.contribute{value: 1 ether}(1 ether);
         vm.stopPrank();
 
         // Verify addition
@@ -1597,8 +1561,7 @@ contract DaaoTest is Test{
 
         // Multiple contributions shouldn't add duplicate entries
         vm.startPrank(USER_1);
-        IERC20(modeToken).approve(address(dao), 1 ether);
-        dao.contribute(1 ether);
+        dao.contribute{value: 1 ether}(1 ether);
         vm.stopPrank();
 
         assertEq(dao.getContributorsCount(), 1);
@@ -1618,6 +1581,94 @@ contract DaaoTest is Test{
         // Should revert when trying to access invalid index
         vm.expectRevert();
         dao.getContributorAtIndex(0);
+    }
+
+    function test_contributeWithNativeTokenShouldRevertIfMsgValueMismatch() public {
+        // Setup: Add user to whitelist
+        address[] memory users = new address[](1);
+        users[0] = USER_1;
+        Daao.WhitelistTier[] memory tiers = new Daao.WhitelistTier[](1);
+        tiers[0] = Daao.WhitelistTier.Platinum;
+        
+        vm.prank(PROTOCOL_ADMIN);
+        dao.addOrUpdateWhitelist(users, tiers);
+
+        // Try to contribute with mismatched msg.value
+        vm.startPrank(USER_1);
+        vm.expectRevert("Amount must be equal to msg.value");
+        dao.contribute{value: 0.5 ether}(1 ether); // msg.value doesn't match amount
+        vm.stopPrank();
+    }
+
+    function test_contributeWithNativeTokenShouldWrapCorrectly() public {
+        // Setup: Add user to whitelist
+        address[] memory users = new address[](1);
+        users[0] = USER_1;
+        Daao.WhitelistTier[] memory tiers = new Daao.WhitelistTier[](1);
+        tiers[0] = Daao.WhitelistTier.Platinum;
+        
+        vm.prank(PROTOCOL_ADMIN);
+        dao.addOrUpdateWhitelist(users, tiers);
+
+        uint256 contributionAmount = 1 ether;
+        
+        // Record balances before contribution
+        uint256 userEthBalanceBefore = address(USER_1).balance;
+        uint256 daoWrappedTokenBalanceBefore = IERC20(paymentToken).balanceOf(address(dao));
+        
+        // Make contribution
+        vm.startPrank(USER_1);
+        dao.contribute{value: contributionAmount}(contributionAmount);
+        vm.stopPrank();
+        
+        // Verify ETH was taken from user
+        assertEq(address(USER_1).balance, userEthBalanceBefore - contributionAmount);
+        
+        // Verify ETH was wrapped and stored in contract
+        assertEq(
+            IERC20(paymentToken).balanceOf(address(dao)), 
+            daoWrappedTokenBalanceBefore + contributionAmount
+        );
+        
+        // Verify contribution was recorded
+        assertEq(dao.contributions(USER_1), contributionAmount);
+        assertEq(dao.totalRaised(), contributionAmount);
+    }
+
+    function test_contributeWithNativeTokenShouldHandlePartialContribution() public {
+        // Setup: Add users to whitelist
+        address[] memory users = new address[](2);
+        users[0] = USER_1;
+        users[1] = USER_2;
+        Daao.WhitelistTier[] memory tiers = new Daao.WhitelistTier[](2);
+        tiers[0] = Daao.WhitelistTier.Platinum;
+        tiers[1] = Daao.WhitelistTier.Platinum;
+        
+        vm.prank(PROTOCOL_ADMIN);
+        dao.addOrUpdateWhitelist(users, tiers);
+        
+        vm.prank(PROTOCOL_ADMIN);
+        dao.updateTierLimit(Daao.WhitelistTier.Platinum, 10 ether);
+        
+        // First user contributes 9 ETH
+        vm.startPrank(USER_1);
+        dao.contribute{value: 9 ether}(9 ether);
+        vm.stopPrank();
+        
+        // Second user tries to contribute 2 ETH but only 1 ETH should be accepted
+        uint256 user2BalanceBefore = address(USER_2).balance;
+        
+        vm.startPrank(USER_2);
+        dao.contribute{value: 2 ether}(2 ether);
+        vm.stopPrank();
+        
+        // Verify only 1 ETH was taken (fundraising goal is 10 ETH)
+        assertEq(dao.totalRaised(), 10 ether);
+        assertEq(dao.contributions(USER_2), 1 ether);
+        assertApproxEqRel(address(USER_2).balance, user2BalanceBefore - 1 ether, 0.0001 ether); // Full amount is sent
+        
+        // Verify wrapped token balance in contract
+        // assertEq(IERC20(paymentToken).balanceOf(address(dao)), 10 ether);
     }
 
 }

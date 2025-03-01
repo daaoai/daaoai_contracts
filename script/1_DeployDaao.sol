@@ -10,7 +10,9 @@ import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {LockerFactory} from "../src/LPLocker/LockerFactory.sol";
 contract DeployDaosWorld is Script {
 
-    address public constant PAYMENT_TOKEN = 0xDfc7C877a950e49D2610114102175A06C2e3167a;
+    address public constant PAYMENT_TOKEN = 0x760AfE86e5de5fa0Ee542fc7B7B713e1c5425701; // Wrapped MON token for monad testnet
+    address public constant NONFUNGIBLE_POSITION_MANAGER = 0x3dCc735C74F10FE2B9db2BB55C40fbBbf24490f7;
+    
     function run() public {
         // Load private key
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
@@ -38,7 +40,9 @@ contract DeployDaosWorld is Script {
             fundExpiry,
             daoManager,
             liquidityLockerFactory,
-            protocolAdmin
+            protocolAdmin,
+            PAYMENT_TOKEN,
+            NONFUNGIBLE_POSITION_MANAGER
         );
 
         console2.log("Daos manager is ", daoManager); // 0x6F1313f206dB52139EB6892Bfd88aC9Ae36Dc54E
